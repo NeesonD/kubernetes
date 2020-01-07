@@ -185,6 +185,7 @@ func Run(ctx context.Context, cc schedulerserverconfig.CompletedConfig, outOfTre
 	}
 
 	// Create the scheduler.
+	// 初始化 scheduler
 	sched, err := scheduler.New(cc.Client,
 		cc.InformerFactory,
 		cc.PodInformer,
@@ -268,6 +269,8 @@ func Run(ctx context.Context, cc schedulerserverconfig.CompletedConfig, outOfTre
 	}
 
 	// Leader election is disabled, so runCommand inline until done.
+	// 第一层结束，进入到第二层，逻辑层
+	// d 结尾的代表是 daemon
 	sched.Run(ctx)
 	return fmt.Errorf("finished without leader elect")
 }

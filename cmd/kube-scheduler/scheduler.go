@@ -29,6 +29,9 @@ import (
 	"k8s.io/kubernetes/cmd/kube-scheduler/app"
 )
 
+/**
+其它几个组件的启动方法中核心都是 command
+*/
 func main() {
 	rand.Seed(time.Now().UnixNano())
 

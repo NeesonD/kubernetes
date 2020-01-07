@@ -31,6 +31,7 @@ import (
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
+	// 核心
 	command := app.NewAPIServerCommand()
 
 	// TODO: once we switch everything over to Cobra commands, we can go back to calling
@@ -40,6 +41,7 @@ func main() {
 	logs.InitLogs()
 	defer logs.FlushLogs()
 
+	// 核心，触发 command 中的 Run 方法
 	if err := command.Execute(); err != nil {
 		os.Exit(1)
 	}
