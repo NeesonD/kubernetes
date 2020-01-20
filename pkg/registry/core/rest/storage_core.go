@@ -117,7 +117,7 @@ func (c LegacyRESTStorageProvider) NewLegacyRESTStorage(restOptionsGetter generi
 		}
 	}
 	restStorage := LegacyRESTStorage{}
-
+	// 这里生成各种常见资源的 rest
 	podTemplateStorage, err := podtemplatestore.NewREST(restOptionsGetter)
 	if err != nil {
 		return LegacyRESTStorage{}, genericapiserver.APIGroupInfo{}, err

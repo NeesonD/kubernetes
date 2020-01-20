@@ -104,7 +104,9 @@ func (g *APIGroupVersion) InstallREST(container *restful.Container) error {
 
 	apiResources, ws, registrationErrors := installer.Install()
 	versionDiscoveryHandler := discovery.NewAPIVersionHandler(g.Serializer, g.GroupVersion, staticLister{apiResources})
+	// 将 route 安装到 webservice
 	versionDiscoveryHandler.AddToWebService(ws)
+	// 将 webservice 注册到 container
 	container.Add(ws)
 	return utilerrors.NewAggregate(registrationErrors)
 }

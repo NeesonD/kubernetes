@@ -50,17 +50,19 @@ func WithAuthorization(handler http.Handler, a authorizer.Authorizer, s runtime.
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 		ae := request.AuditEventFrom(ctx)
-
+		// 调用GetAuthorizerAttributes方法获取配置的各种属性值
 		attributes, err := GetAuthorizerAttributes(ctx)
 		if err != nil {
 			responsewriters.InternalError(w, req, err)
 			return
 		}
+		//调用Authorize方法判断权限是否通过，不同的权限实现其接口，完成鉴权任务
 		authorized, reason, err := a.Authorize(ctx, attributes)
 		// an authorizer like RBAC could encounter evaluation errors and still allow the request, so authorizer decision is checked before error here.
 		if authorized == authorizer.DecisionAllow {
 			audit.LogAnnotation(ae, decisionAnnotationKey, decisionAllow)
 			audit.LogAnnotation(ae, reasonAnnotationKey, reason)
+			// 执行下一个 filter
 			handler.ServeHTTP(w, req)
 			return
 		}
