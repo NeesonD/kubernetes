@@ -211,7 +211,7 @@ func CreateServerChain(completedOptions completedServerRunOptions, stopCh <-chan
 		return nil, err
 	}
 
-	// 7.启动非安全端口的server
+	// 7.启动HTTP的server
 	if insecureServingInfo != nil {
 		insecureHandlerChain := kubeserver.BuildInsecureHandlerChain(aggregatorServer.GenericAPIServer.UnprotectedHandler(), kubeAPIServerConfig.GenericConfig)
 		if err := insecureServingInfo.Serve(insecureHandlerChain, kubeAPIServerConfig.GenericConfig.RequestTimeout, stopCh); err != nil {
@@ -219,7 +219,7 @@ func CreateServerChain(completedOptions completedServerRunOptions, stopCh <-chan
 		}
 	}
 
-	// 8.返回GenericAPIServer，后续启动安全端口的server
+	// 8.返回GenericAPIServer，后续启动HTTPS的server
 	return aggregatorServer, nil
 }
 

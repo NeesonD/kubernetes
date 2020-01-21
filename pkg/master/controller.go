@@ -69,14 +69,21 @@ type Controller struct {
 
 	SystemNamespaces         []string
 	SystemNamespacesInterval time.Duration
-
+	//apiserver在集群中的服务IP，参考下面的参数
+	//--advertise-address ip The IP address on which to advertise the apiserver to members of the cluster. This address must be reachable by the rest of the cluster. If blank, the --bind-address will be used. If --bind-address is unspecified, the host's default interface will be used
 	PublicIP net.IP
 
 	// ServiceIP indicates where the kubernetes service will live.  It may not be nil.
-	ServiceIP                 net.IP
-	ServicePort               int
-	ExtraServicePorts         []corev1.ServicePort
-	ExtraEndpointPorts        []corev1.EndpointPort
+	//是kubernetes对外服务的Cluster IP，按照启动样例，为：10.254.0.1
+	//这个IP，是基于启动参数：service-cluster-ip-range而来，API Server启动过程中，会从中获取第一个Cluster IP网段中获取第一个IP，作为kubernetes这个服务的Cluster IP。
+	//--service-cluster-ip-range ipNet A CIDR notation IP range from which to assign service cluster IPs. This must not overlap with any IP ranges assigned to nodes for pods.
+	ServiceIP net.IP
+	// 是kubernetes对外服务的Port，按照启动样例，为：443，目前是在创建master.Config时写死的，从master.ExtraConfig.APIServerServicePort中赋值过来
+	ServicePort        int
+	ExtraServicePorts  []corev1.ServicePort
+	ExtraEndpointPorts []corev1.EndpointPort
+	//基于启动参数secure-port来指定，缺省为6443。
+	//--secure-port int The port on which to serve HTTPS with authentication and authorization. If 0, don't serve HTTPS at all. (default 6443)
 	PublicServicePort         int
 	KubernetesServiceNodePort int
 

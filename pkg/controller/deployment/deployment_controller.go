@@ -566,10 +566,12 @@ func (dc *DeploymentController) syncDeployment(key string) error {
 		klog.V(4).Infof("Finished syncing deployment %q (%v)", key, time.Since(startTime))
 	}()
 
+	// 通过key获取资源的namespace和name
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		return err
 	}
+	// 通过namespace和name获取deployment信息
 	deployment, err := dc.dLister.Deployments(namespace).Get(name)
 	if errors.IsNotFound(err) {
 		klog.V(2).Infof("Deployment %v has been deleted", key)
@@ -595,6 +597,7 @@ func (dc *DeploymentController) syncDeployment(key string) error {
 
 	// List ReplicaSets owned by this Deployment, while reconciling ControllerRef
 	// through adoption/orphaning.
+	// 通过deployment获取其对应的ReplicaSet
 	rsList, err := dc.getReplicaSetsForDeployment(d)
 	if err != nil {
 		return err
@@ -604,11 +607,13 @@ func (dc *DeploymentController) syncDeployment(key string) error {
 	//
 	// * check if a Pod is labeled correctly with the pod-template-hash label.
 	// * check that no old Pods are running in the middle of Recreate Deployments.
+	// 通过Deployment和ReplicaSet获取相应的pod信息
 	podMap, err := dc.getPodMapForDeployment(d, rsList)
 	if err != nil {
 		return err
 	}
 
+	// 判断需要进行什么操作
 	if d.DeletionTimestamp != nil {
 		return dc.syncStatusOnly(d, rsList)
 	}

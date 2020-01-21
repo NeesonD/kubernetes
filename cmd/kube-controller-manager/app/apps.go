@@ -83,6 +83,7 @@ func startDeploymentController(ctx ControllerContext) (http.Handler, bool, error
 	if !ctx.AvailableResources[schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}] {
 		return nil, false, nil
 	}
+	// 创建 DeploymentController
 	dc, err := deployment.NewDeploymentController(
 		ctx.InformerFactory.Apps().V1().Deployments(),
 		ctx.InformerFactory.Apps().V1().ReplicaSets(),

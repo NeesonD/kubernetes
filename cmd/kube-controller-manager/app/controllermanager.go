@@ -193,8 +193,11 @@ func Run(c *config.CompletedConfig, stopCh <-chan struct{}) error {
 			return err
 		}
 	}
-
+	// 注意这里run是一个方法，主要目的是在leader election中，成为leader后才需要运行。follower不需要运行。
 	run := func(ctx context.Context) {
+		// 这里用到了ControllerClientBuilder，它是用于创建到API Server的各种连接的构建器。
+		// 由于在Controller中会有多种到API Server的连接，为了区分它们，就需要基于构建器来完成，
+		// 在构建时会生成不同的Agent Name，从而能够根据Agent Name进行区分。
 		rootClientBuilder := controller.SimpleControllerClientBuilder{
 			ClientConfig: c.Kubeconfig,
 		}
@@ -225,16 +228,20 @@ func Run(c *config.CompletedConfig, stopCh <-chan struct{}) error {
 		} else {
 			clientBuilder = rootClientBuilder
 		}
+		// rootClientBuilder 用于sharedInformer与token控制器
 		controllerContext, err := CreateControllerContext(c, rootClientBuilder, clientBuilder, ctx.Done())
 		if err != nil {
 			klog.Fatalf("error building controller context: %v", err)
 		}
+		//  service account token controller有点特殊，它必须要优先启动，为其他controller设置许可权，
+		//  并且它不能使用普通的client builder，只能使用root client builder。
+		//  它也不能包含在普通的初始化，必须优先启动。
 		saTokenControllerInitFunc := serviceAccountTokenControllerStarter{rootClientBuilder: rootClientBuilder}.startServiceAccountTokenController
-
+		// 启动 controller
 		if err := StartControllers(controllerContext, saTokenControllerInitFunc, NewControllerInitializers(controllerContext.LoopMode), unsecuredMux); err != nil {
 			klog.Fatalf("error starting controllers: %v", err)
 		}
-
+		// 启动Informer工厂实例，在这里会启动各种类型的通知实例，新的资源变更，会源源不断的作为事件传输过来。
 		controllerContext.InformerFactory.Start(controllerContext.Stop)
 		controllerContext.ObjectOrMetadataInformerFactory.Start(controllerContext.Stop)
 		close(controllerContext.InformersStarted)
@@ -254,7 +261,7 @@ func Run(c *config.CompletedConfig, stopCh <-chan struct{}) error {
 
 	// add a uniquifier so that two processes on the same host don't accidentally both become active
 	id = id + "_" + string(uuid.NewUUID())
-
+	// 创建资源锁，资源锁有两种：configmap和endpoints
 	rl, err := resourcelock.New(c.ComponentConfig.Generic.LeaderElection.ResourceLock,
 		c.ComponentConfig.Generic.LeaderElection.ResourceNamespace,
 		c.ComponentConfig.Generic.LeaderElection.ResourceName,
@@ -267,13 +274,14 @@ func Run(c *config.CompletedConfig, stopCh <-chan struct{}) error {
 	if err != nil {
 		klog.Fatalf("error creating lock: %v", err)
 	}
-
+	// 启动leader election
 	leaderelection.RunOrDie(context.TODO(), leaderelection.LeaderElectionConfig{
 		Lock:          rl,
 		LeaseDuration: c.ComponentConfig.Generic.LeaderElection.LeaseDuration.Duration,
 		RenewDeadline: c.ComponentConfig.Generic.LeaderElection.RenewDeadline.Duration,
 		RetryPeriod:   c.ComponentConfig.Generic.LeaderElection.RetryPeriod.Duration,
 		Callbacks: leaderelection.LeaderCallbacks{
+			// 成为leader后运行
 			OnStartedLeading: run,
 			OnStoppedLeading: func() {
 				klog.Fatalf("leaderelection lost")
