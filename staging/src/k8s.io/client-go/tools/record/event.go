@@ -285,9 +285,11 @@ func (e *eventBroadcasterImpl) StartLogging(logf func(format string, args ...int
 // StartEventWatcher starts sending events received from this EventBroadcaster to the given event handler function.
 // The return value can be ignored or used to stop recording, if desired.
 func (e *eventBroadcasterImpl) StartEventWatcher(eventHandler func(*v1.Event)) watch.Interface {
+	// 注册一个 handle chan 到 Broadcaster 里面
 	watcher := e.Watch()
 	go func() {
 		defer utilruntime.HandleCrash()
+		// 当 incoming chan 有事件时，会分发到 handle chan 里面，这里就会获取到相应的事件
 		for watchEvent := range watcher.ResultChan() {
 			event, ok := watchEvent.Object.(*v1.Event)
 			if !ok {

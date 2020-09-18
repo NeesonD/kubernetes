@@ -72,6 +72,7 @@ func NewBroadcaster(queueLength int, fullChannelBehavior FullChannelBehavior) *B
 		fullChannelBehavior: fullChannelBehavior,
 	}
 	m.distributing.Add(1)
+	// 起一个常驻task来从 incoming chan 获取事件，并分发
 	go m.loop()
 	return m
 }
@@ -204,6 +205,7 @@ func (m *Broadcaster) Shutdown() {
 func (m *Broadcaster) loop() {
 	// Deliberately not catching crashes here. Yes, bring down the process if there's a
 	// bug in watch.Broadcaster.
+	// record 会把事件存储到 incoming chan 里面，这里从 incoming 里面获取到 event，然后分发到不同的处理 chan 里面
 	for event := range m.incoming {
 		if event.Type == internalRunFunctionMarker {
 			event.Object.(functionFakeRuntimeObject)()

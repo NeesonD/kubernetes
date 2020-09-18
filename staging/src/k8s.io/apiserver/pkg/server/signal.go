@@ -28,10 +28,12 @@ var shutdownHandler chan os.Signal
 // which is closed on one of these signals. If a second signal is caught, the program
 // is terminated with exit code 1.
 func SetupSignalHandler() <-chan struct{} {
+	// 防止调用两次
 	close(onlyOneSignalHandler) // panics when called twice
 
 	shutdownHandler = make(chan os.Signal, 2)
 
+	// 响应信号
 	stop := make(chan struct{})
 	signal.Notify(shutdownHandler, shutdownSignals...)
 	go func() {

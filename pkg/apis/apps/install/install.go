@@ -29,14 +29,17 @@ import (
 )
 
 func init() {
+	// 资源注册表
 	Install(legacyscheme.Scheme)
 }
 
 // Install registers the API group and adds types to a scheme
+// 将内部资源和外部资源注册到注册表里面
 func Install(scheme *runtime.Scheme) {
 	utilruntime.Must(apps.AddToScheme(scheme))
 	utilruntime.Must(v1beta1.AddToScheme(scheme))
 	utilruntime.Must(v1beta2.AddToScheme(scheme))
 	utilruntime.Must(v1.AddToScheme(scheme))
+	// 设置版本优先级
 	utilruntime.Must(scheme.SetVersionPriority(v1.SchemeGroupVersion, v1beta2.SchemeGroupVersion, v1beta1.SchemeGroupVersion))
 }
