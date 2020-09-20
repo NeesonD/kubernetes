@@ -594,6 +594,7 @@ func (c serviceAccountTokenControllerStarter) startServiceAccountTokenController
 	go controller.Run(int(ctx.ComponentConfig.SAController.ConcurrentSATokenSyncs), ctx.Stop)
 
 	// start the first set of informers now so that other controllers can start
+	// sharedIndexInformer.Run -> controller.Run ->
 	ctx.InformerFactory.Start(ctx.Stop)
 
 	return nil, true, nil

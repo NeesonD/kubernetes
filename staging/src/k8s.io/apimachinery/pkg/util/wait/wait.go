@@ -39,6 +39,7 @@ var ForeverTestTimeout = time.Second * 30
 var NeverStop <-chan struct{} = make(chan struct{})
 
 // Group allows to start a group of goroutines and wait for their completion.
+// 可借鉴的设计，比如说 lock、go
 type Group struct {
 	wg sync.WaitGroup
 }
@@ -128,11 +129,13 @@ func NonSlidingUntilWithContext(ctx context.Context, f func(context.Context), pe
 //
 // Close stopCh to stop. f may not be invoked if stop channel is already
 // closed. Pass NeverStop to if you don't want it stop.
+// 定时任务
 func JitterUntil(f func(), period time.Duration, jitterFactor float64, sliding bool, stopCh <-chan struct{}) {
 	var t *time.Timer
 	var sawTimeout bool
 
 	for {
+		// 这里算是一种标准写法
 		select {
 		case <-stopCh:
 			return
@@ -189,6 +192,7 @@ func JitterUntilWithContext(ctx context.Context, f func(context.Context), period
 //
 // This allows clients to avoid converging on periodic behavior. If maxFactor
 // is 0.0, a suggested default value will be chosen.
+// 避免产生周期性行为
 func Jitter(duration time.Duration, maxFactor float64) time.Duration {
 	if maxFactor <= 0.0 {
 		maxFactor = 1.0

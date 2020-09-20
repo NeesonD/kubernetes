@@ -317,6 +317,7 @@ func (s *sharedIndexInformer) Run(stopCh <-chan struct{}) {
 	}()
 
 	// Separate stop channel because Processor should be stopped strictly after controller
+	// 像这种传递 空 chan 的场景一般是：1. 目标函数是常住任务（loop），需要响应 stop 2. 目标函数阻塞，直到收到 stop 信号
 	processorStopCh := make(chan struct{})
 	var wg wait.Group
 	defer wg.Wait()              // Wait for Processor to stop
