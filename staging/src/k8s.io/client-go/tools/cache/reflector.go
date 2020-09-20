@@ -151,6 +151,7 @@ var internalPackages = []string{"client-go/tools/cache/"}
 // Run will exit when stopCh is closed.
 func (r *Reflector) Run(stopCh <-chan struct{}) {
 	klog.V(3).Infof("Starting reflector %v (%s) from %s", r.expectedTypeName, r.resyncPeriod, r.name)
+	// 定时执行 ListAndWatch
 	wait.Until(func() {
 		if err := r.ListAndWatch(stopCh); err != nil {
 			utilruntime.HandleError(err)

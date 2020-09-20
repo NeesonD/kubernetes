@@ -85,7 +85,7 @@ func Forever(f func(), period time.Duration) {
 // Until is syntactic sugar on top of JitterUntil with zero jitter factor and
 // with sliding = true (which means the timer for period starts after the f
 // completes).
-// TODO 待分析
+// 定时执行 f
 func Until(f func(), period time.Duration, stopCh <-chan struct{}) {
 	JitterUntil(f, period, 0.0, true, stopCh)
 }
