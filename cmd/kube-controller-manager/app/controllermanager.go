@@ -237,7 +237,7 @@ func Run(c *config.CompletedConfig, stopCh <-chan struct{}) error {
 		//  并且它不能使用普通的client builder，只能使用root client builder。
 		//  它也不能包含在普通的初始化，必须优先启动。
 		saTokenControllerInitFunc := serviceAccountTokenControllerStarter{rootClientBuilder: rootClientBuilder}.startServiceAccountTokenController
-		// 启动 controller
+		// 启动 controller.run
 		if err := StartControllers(controllerContext, saTokenControllerInitFunc, NewControllerInitializers(controllerContext.LoopMode), unsecuredMux); err != nil {
 			klog.Fatalf("error starting controllers: %v", err)
 		}

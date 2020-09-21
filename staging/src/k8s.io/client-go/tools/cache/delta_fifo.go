@@ -405,7 +405,7 @@ func (f *DeltaFIFO) Pop(process PopProcessFunc) (interface{}, error) {
 			if f.IsClosed() {
 				return nil, ErrFIFOClosed
 			}
-
+			// 等待
 			f.cond.Wait()
 		}
 		id := f.queue[0]

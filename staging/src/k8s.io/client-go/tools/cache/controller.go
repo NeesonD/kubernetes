@@ -107,7 +107,7 @@ func (c *controller) Run(stopCh <-chan struct{}) {
 	r := NewReflector(
 		c.config.ListerWatcher,
 		c.config.ObjectType,
-		c.config.Queue,
+		c.config.Queue, // 实现是 DeltaFIFO
 		c.config.FullResyncPeriod,
 	)
 	r.ShouldResync = c.config.ShouldResync
@@ -120,8 +120,10 @@ func (c *controller) Run(stopCh <-chan struct{}) {
 	var wg wait.Group
 	defer wg.Wait()
 
+	// 这里执行 ListAndWatch，将资源同步到 DeltaFIFO 中
 	wg.StartWithChannel(stopCh, r.Run)
 
+	// 从 DeltaFIFO 中 pop，进行处理
 	wait.Until(c.processLoop, time.Second, stopCh)
 }
 
@@ -150,6 +152,7 @@ func (c *controller) LastSyncResourceVersion() string {
 // also be helpful.
 func (c *controller) processLoop() {
 	for {
+		// 执行 HandleDeltas
 		obj, err := c.config.Queue.Pop(PopProcessFunc(c.config.Process))
 		if err != nil {
 			if err == ErrFIFOClosed {

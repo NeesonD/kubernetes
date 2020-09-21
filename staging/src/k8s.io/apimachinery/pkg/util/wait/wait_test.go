@@ -298,6 +298,7 @@ DRAIN:
 			t.Errorf("unexpected timeout after poll")
 		}
 	}
+	fmt.Println(count)
 	if count > 3 {
 		t.Errorf("expected up to three values, got %d", count)
 	}

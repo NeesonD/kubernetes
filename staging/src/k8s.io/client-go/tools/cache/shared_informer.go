@@ -193,7 +193,7 @@ const (
 // WaitForNamedCacheSync is a wrapper around WaitForCacheSync that generates log messages
 // indicating that the caller identified by name is waiting for syncs, followed by
 // either a successful or failed sync.
-// TODO 待分析
+// 一直轮询cacheSyncs，知道所有的判断都为true
 func WaitForNamedCacheSync(controllerName string, stopCh <-chan struct{}, cacheSyncs ...InformerSynced) bool {
 	klog.Infof("Waiting for caches to sync for %s", controllerName)
 
@@ -323,6 +323,7 @@ func (s *sharedIndexInformer) Run(stopCh <-chan struct{}) {
 	defer wg.Wait()              // Wait for Processor to stop
 	defer close(processorStopCh) // Tell Processor to stop
 	wg.StartWithChannel(processorStopCh, s.cacheMutationDetector.Run)
+	// 让 processorListener 跑起来，处理增删改事件
 	wg.StartWithChannel(processorStopCh, s.processor.run)
 
 	defer func() {
@@ -652,7 +653,9 @@ func (p *processorListener) run() {
 	wait.Until(func() {
 		// this gives us a few quick retries before a long pause and then a few more quick retries
 		err := wait.ExponentialBackoff(retry.DefaultRetry, func() (bool, error) {
+			// 定时从 nextCh 中获取，拿到之后进行资源对应的增删改逻辑
 			for next := range p.nextCh {
+				// 这里执行对应的增删改业务逻辑
 				switch notification := next.(type) {
 				case updateNotification:
 					p.handler.OnUpdate(notification.oldObj, notification.newObj)

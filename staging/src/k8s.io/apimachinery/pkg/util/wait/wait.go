@@ -463,7 +463,7 @@ func WaitFor(wait WaitFunc, fn ConditionFunc, done <-chan struct{}) error {
 // Output ticks are not buffered. If the channel is not ready to receive an
 // item, the tick is skipped.
 func poller(interval, timeout time.Duration) WaitFunc {
-	return WaitFunc(func(done <-chan struct{}) <-chan struct{} {
+	return func(done <-chan struct{}) <-chan struct{} {
 		ch := make(chan struct{})
 
 		go func() {
@@ -500,7 +500,7 @@ func poller(interval, timeout time.Duration) WaitFunc {
 		}()
 
 		return ch
-	})
+	}
 }
 
 // resetOrReuseTimer avoids allocating a new timer if one is already in use.

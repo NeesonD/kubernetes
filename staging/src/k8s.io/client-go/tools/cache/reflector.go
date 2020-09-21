@@ -212,7 +212,7 @@ func (r *Reflector) ListAndWatch(stopCh <-chan struct{}) error {
 			if r.WatchListPageSize != 0 {
 				pager.PageSize = r.WatchListPageSize
 			}
-
+			// 全量获取资源
 			list, err = pager.List(context.Background(), options)
 			if isExpiredError(err) {
 				r.setIsLastSyncResourceVersionExpired(true)
@@ -248,6 +248,7 @@ func (r *Reflector) ListAndWatch(stopCh <-chan struct{}) error {
 			return fmt.Errorf("%s: Unable to understand list result %#v (%v)", r.name, list, err)
 		}
 		initTrace.Step("Objects extracted")
+		// 将资源列表保存到本地缓存
 		if err := r.syncWith(items, resourceVersion); err != nil {
 			return fmt.Errorf("%s: Unable to sync list result: %v", r.name, err)
 		}
@@ -262,6 +263,7 @@ func (r *Reflector) ListAndWatch(stopCh <-chan struct{}) error {
 	resyncerrc := make(chan error, 1)
 	cancelCh := make(chan struct{})
 	defer close(cancelCh)
+	// 看需不需要定时 resync 一下
 	go func() {
 		resyncCh, cleanup := r.resyncChan()
 		defer func() {
@@ -306,7 +308,7 @@ func (r *Reflector) ListAndWatch(stopCh <-chan struct{}) error {
 			// watch bookmarks, it will ignore this field).
 			AllowWatchBookmarks: true,
 		}
-
+		// watch 资源，其实就是调用 client 的 watch 函数
 		w, err := r.listerWatcher.Watch(options)
 		if err != nil {
 			switch {
@@ -356,6 +358,7 @@ func (r *Reflector) syncWith(items []runtime.Object, resourceVersion string) err
 }
 
 // watchHandler watches w and keeps *resourceVersion up to date.
+// 同步store里面的值
 func (r *Reflector) watchHandler(w watch.Interface, resourceVersion *string, errc chan error, stopCh <-chan struct{}) error {
 	start := r.clock.Now()
 	eventCount := 0
