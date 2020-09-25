@@ -196,9 +196,11 @@ func (g *genericScheduler) PredicateMetadataProducer() predicates.MetadataProduc
 // If it succeeds, it will return the name of the node.
 // If it fails, it will return a FitError error with reasons.
 func (g *genericScheduler) Schedule(ctx context.Context, state *framework.CycleState, pod *v1.Pod) (result ScheduleResult, err error) {
+	// trace 工具类可以用于复杂业务中，用于记录业务流程执行时间，便于排查问题
 	trace := utiltrace.New("Scheduling", utiltrace.Field{Key: "namespace", Value: pod.Namespace}, utiltrace.Field{Key: "name", Value: pod.Name})
 	defer trace.LogIfLong(100 * time.Millisecond)
 
+	// 先检查一下 pvc 符不符合
 	if err := podPassesBasicChecks(pod, g.pvcLister); err != nil {
 		return result, err
 	}

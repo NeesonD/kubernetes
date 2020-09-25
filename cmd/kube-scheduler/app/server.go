@@ -116,16 +116,19 @@ through the API as necessary.`,
 // runCommand runs the scheduler.
 func runCommand(cmd *cobra.Command, args []string, opts *options.Options, registryOptions ...Option) error {
 	verflag.PrintAndExitIfRequested()
+	// 配置信息需要打印出来，便于排查问题，可借鉴
 	utilflag.PrintFlags(cmd.Flags())
 
 	if len(args) != 0 {
 		fmt.Fprint(os.Stderr, "arguments are not supported\n")
 	}
 
+	// 先验证参数，err 可以用数组全部聚合起来
 	if errs := opts.Validate(); len(errs) > 0 {
 		return utilerrors.NewAggregate(errs)
 	}
 
+	// 将配置信息写到文件里面
 	if len(opts.WriteConfigTo) > 0 {
 		c := &schedulerserverconfig.Config{}
 		if err := opts.ApplyTo(c); err != nil {
@@ -148,6 +151,7 @@ func runCommand(cmd *cobra.Command, args []string, opts *options.Options, regist
 
 	// Apply algorithms based on feature gates.
 	// TODO: make configurable?
+	// 注册调度算法(这里还没有实例化算法)
 	algorithmprovider.ApplyFeatureGates()
 
 	// Configz registration.
@@ -185,7 +189,7 @@ func Run(ctx context.Context, cc schedulerserverconfig.CompletedConfig, outOfTre
 	}
 
 	// Create the scheduler.
-	// 初始化 scheduler
+	// 初始化 scheduler，实例化 informer，各种调度算法
 	sched, err := scheduler.New(cc.Client,
 		cc.InformerFactory,
 		cc.PodInformer,
@@ -220,6 +224,7 @@ func Run(ctx context.Context, cc schedulerserverconfig.CompletedConfig, outOfTre
 		checks = append(checks, cc.LeaderElection.WatchDog)
 	}
 
+	// 添加filter
 	// Start up the healthz server.
 	if cc.InsecureServing != nil {
 		separateMetrics := cc.InsecureMetricsServing != nil
@@ -243,6 +248,7 @@ func Run(ctx context.Context, cc schedulerserverconfig.CompletedConfig, outOfTre
 		}
 	}
 
+	// 关注资源的 informer
 	// Start all informers.
 	go cc.PodInformer.Informer().Run(ctx.Done())
 	cc.InformerFactory.Start(ctx.Done())
@@ -250,6 +256,7 @@ func Run(ctx context.Context, cc schedulerserverconfig.CompletedConfig, outOfTre
 	// Wait for all caches to sync before scheduling.
 	cc.InformerFactory.WaitForCacheSync(ctx.Done())
 
+	// 选举
 	// If leader election is enabled, runCommand via LeaderElector until done and exit.
 	if cc.LeaderElection != nil {
 		cc.LeaderElection.Callbacks = leaderelection.LeaderCallbacks{

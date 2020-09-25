@@ -2391,6 +2391,7 @@ type Affinity struct {
 	PodAffinity *PodAffinity
 	// Describes pod anti-affinity scheduling rules (e.g. avoid putting this pod in the same node, zone, etc. as some other pod(s)).
 	// +optional
+	// 反亲和性，一般用于容灾
 	PodAntiAffinity *PodAntiAffinity
 }
 

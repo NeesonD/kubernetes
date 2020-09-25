@@ -90,10 +90,13 @@ type AlgorithmProviderConfig struct {
 
 // Snapshot is used to store current state of registered predicates and priorities.
 type Snapshot struct {
+	// 预选算法
 	fitPredicateMap        map[string]FitPredicateFactory
 	mandatoryFitPredicates sets.String
-	priorityFunctionMap    map[string]PriorityConfigFactory
-	algorithmProviderMap   map[string]AlgorithmProviderConfig
+	// 优选算法
+	priorityFunctionMap map[string]PriorityConfigFactory
+	// 所有算法
+	algorithmProviderMap map[string]AlgorithmProviderConfig
 }
 
 // RegisteredPredicatesAndPrioritiesSnapshot returns a snapshot of current registered predicates and priorities.

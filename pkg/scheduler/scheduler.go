@@ -287,6 +287,7 @@ func New(client clientset.Interface,
 		opt(&options)
 	}
 
+	// 实例化volume相关的 Informer
 	schedulerCache := internalcache.New(30*time.Second, stopEverything)
 	volumeBinder := volumebinder.NewVolumeBinder(
 		client,
@@ -341,13 +342,16 @@ func New(client clientset.Interface,
 	var sched *Scheduler
 	source := options.schedulerAlgorithmSource
 	switch {
+	// 通用调度器
 	case source.Provider != nil:
 		// Create the config from a named algorithm provider.
+		// 实例化调度算法函数
 		sc, err := configurator.CreateFromProvider(*source.Provider)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't create scheduler using provider %q: %v", *source.Provider, err)
 		}
 		sched = sc
+	// 根据 policy-config-file 配置来实例化对应的调度算法
 	case source.Policy != nil:
 		// Create the config from a user specified policy source.
 		policy := &schedulerapi.Policy{}
@@ -378,6 +382,7 @@ func New(client clientset.Interface,
 	sched.podPreemptor = &podPreemptorImpl{client}
 	sched.scheduledPodsHasSynced = podInformer.Informer().HasSynced
 
+	// 为多个资源添加 informer
 	AddAllEventHandlers(sched, options.schedulerName, informerFactory, podInformer)
 	return sched, nil
 }
@@ -420,10 +425,12 @@ func initPolicyFromConfigMap(client clientset.Interface, policyRef *schedulerapi
 
 // Run begins watching and scheduling. It waits for cache to be synced, then starts scheduling and blocked until the context is done.
 func (sched *Scheduler) Run(ctx context.Context) {
+	// 等待pod资源的同步
 	if !cache.WaitForCacheSync(ctx.Done(), sched.scheduledPodsHasSynced) {
 		return
 	}
 	sched.SchedulingQueue.Run()
+	// 一直运行 scheduleOne，直到退出
 	wait.UntilWithContext(ctx, sched.scheduleOne, 0)
 	sched.SchedulingQueue.Close()
 }
@@ -594,6 +601,7 @@ func (sched *Scheduler) bind(ctx context.Context, assumed *v1.Pod, targetNode st
 func (sched *Scheduler) scheduleOne(ctx context.Context) {
 	fwk := sched.Framework
 
+	// 取出下一个 pod
 	podInfo := sched.NextPod()
 	// pod could be nil when schedulerQueue is closed
 	if podInfo == nil || podInfo.Pod == nil {
@@ -614,6 +622,7 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 	state.SetRecordFrameworkMetrics(rand.Intn(100) < frameworkMetricsSamplePercent)
 	schedulingCycleCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	// 进行调度
 	scheduleResult, err := sched.Algorithm.Schedule(schedulingCycleCtx, state, pod)
 	if err != nil {
 		sched.recordSchedulingFailure(podInfo.DeepCopy(), err, v1.PodReasonUnschedulable, err.Error())
@@ -627,6 +636,7 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 					" No preemption is performed.")
 			} else {
 				preemptionStartTime := time.Now()
+				// 高优先级pod抢占低优先级pod
 				sched.preempt(schedulingCycleCtx, state, fwk, pod, fitError)
 				metrics.PreemptionAttempts.Inc()
 				metrics.SchedulingAlgorithmPreemptionEvaluationDuration.Observe(metrics.SinceInSeconds(preemptionStartTime))

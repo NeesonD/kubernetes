@@ -118,6 +118,7 @@ func NominatedNodeName(pod *v1.Pod) string {
 // pods that are already tried and are determined to be unschedulable. The latter
 // is called unschedulableQ. The third queue holds pods that are moved from
 // unschedulable queues and will be moved to active queue when backoff are completed.
+// unschedulableQ -> podBackoffQ/activeQ   podBackoffQ -> activeQ
 type PriorityQueue struct {
 	stop  chan struct{}
 	clock util.Clock
@@ -365,6 +366,7 @@ func (p *PriorityQueue) flushBackoffQCompleted() {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 	for {
+		// 如果不需要调度，则返回，1s 之后再重试
 		rawPodInfo := p.podBackoffQ.Peek()
 		if rawPodInfo == nil {
 			return
